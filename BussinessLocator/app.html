@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BussinessLocator — Analizar zona</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue-900: #0d2b5e;
+      --blue-800: #1a3c6e;
+      --blue-600: #1a5fb4;
+      --blue-500: #2e86c1;
+      --blue-400: #5dade2;
+      --blue-100: #d6eaf8;
+      --blue-50:  #eaf4fb;
+      --green:    #27ae60;
+      --green-lt: #eafaf1;
+      --green-dk: #1e8449;
+      --orange:   #e67e22;
+      --red:      #e74c3c;
+      --gray-900: #1c2833;
+      --gray-600: #515a5a;
+      --gray-400: #99a3a4;
+      --gray-300: #d5d8dc;
+      --gray-100: #f4f6f7;
+      --white:    #ffffff;
+      --sidebar-w: 320px;
+      --topbar-h: 56px;
+      --results-w: 340px;
+    }
+    html, body { height: 100%; font-family: 'Inter', sans-serif; color: var(--gray-900); }
+    body { display: flex; flex-direction: column; overflow: hidden; }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      height: var(--topbar-h); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; background: var(--blue-900);
+      border-bottom: 1px solid rgba(255,255,255,.1);
+      z-index: 200;
+    }
+    .topbar-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .topbar-logo span { font-size: 16px; font-weight: 800; color: var(--white); }
+    .topbar-logo em { font-style: normal; color: var(--blue-400); }
+    .topbar-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,.6); }
+    .topbar-breadcrumb a { color: rgba(255,255,255,.6); text-decoration: none; }
+    .topbar-breadcrumb a:hover { color: var(--white); }
+    .breadcrumb-sep { color: rgba(255,255,255,.3); }
+    .topbar-actions { display: flex; align-items: center; gap: 10px; }
+    .topbar-plan {
+      background: rgba(255,255,255,.1); color: rgba(255,255,255,.8);
+      font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+    }
+    .topbar-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--blue-500); color: var(--white);
+      font-size: 13px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .main-layout {
+      flex: 1; display: flex; overflow: hidden; position: relative;
+    }
+
+    /* ── LEFT SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w); flex-shrink: 0;
+      background: var(--white); border-right: 1px solid var(--gray-300);
+      display: flex; flex-direction: column;
+      overflow-y: auto; z-index: 100;
+    }
+    .sidebar-section { padding: 20px; border-bottom: 1px solid var(--gray-100); }
+    .sidebar-section:last-child { border-bottom: none; }
+    .sidebar-step {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    }
+    .step-badge {
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800;
+    }
+    .step-badge.active { background: var(--blue-600); color: var(--white); }
+    .step-badge.done   { background: var(--green); color: var(--white); }
+    .step-badge.pending { background: var(--gray-300); color: var(--gray-600); }
+    .step-label { font-size: 13px; font-weight: 700; color: var(--blue-900); }
+    .step-label.pending { color: var(--gray-400); }
+
+    /* Form elements */
+    .field-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); margin-bottom: 6px; }
+    .field-group { margin-bottom: 14px; }
+    .search-wrap { position: relative; }
+    .search-input {
+      width: 100%; padding: 10px 36px 10px 12px;
+      border: 1.5px solid var(--gray-300); border-radius: 8px;
+      font-size: 14px; font-family: 'Inter', sans-serif; color: var(--gray-900);
+      background: var(--white); transition: border-color .2s;
+    }
+    .search-input:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 3px var(--blue-100); }
+    .search-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--gray-400); pointer-events: none; }
+
+    /* Category chips */
+    .category-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .chip {
+      display: flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500;
+      border: 1.5px solid var(--gray-300); background: var(--white);
+      cursor: pointer; transition: all .15s; color: var(--gray-600);
+    }
+    .chip:hover { border-color: var(--blue-400); color: var(--blue-600); background: var(--blue-50); }
+    .chip.selected { border-color: var(--blue-600); background: var(--blue-100); color: var(--blue-800); font-weight: 700; }
+
+    /* Dropdown */
+    .autocomplete-list {
+      display: none; position: absolute; top: 100%; left: 0; right: 0;
+      background: var(--white); border: 1.5px solid var(--gray-300);
+      border-top: none; border-radius: 0 0 8px 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.1); z-index: 300; max-height: 200px; overflow-y: auto;
+    }
+    .autocomplete-list.open { display: block; }
+    .autocomplete-item {
+      padding: 9px 14px; font-size: 13px; cursor: pointer; transition: background .1s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .autocomplete-item:hover { background: var(--blue-50); }
+    .autocomplete-item.highlighted { background: var(--blue-100); font-weight: 600; }
+    .autocomplete-item strong { font-weight: 700; }
+
+    /* Radius slider */
+    .slider-wrap { display: flex; flex-direction: column; gap: 6px; }
+    .slider-row { display: flex; justify-content: space-between; align-items: center; }
+    .slider-value { font-size: 14px; font-weight: 700; color: var(--blue-600); }
+    input[type="range"] { width: 100%; accent-color: var(--blue-600); cursor: pointer; }
+
+    /* Zone mode toggle */
+    .zone-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
+    .zone-btn {
+      flex: 1; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      cursor: pointer; border: 1.5px solid var(--gray-300); background: var(--white);
+      color: var(--gray-600); transition: all .15s; text-align: center;
+    }
+    .zone-btn.active { border-color: var(--blue-600); background: var(--blue-100); color: var(--blue-800); }
+    .zone-btn:hover:not(.active) { border-color: var(--blue-400); }
+
+    /* Coordinate display */
+    .coord-display {
+      background: var(--gray-100); border-radius: 8px; padding: 10px 12px;
+      font-size: 12px; color: var(--gray-600); font-family: monospace;
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .coord-display span { color: var(--gray-900); font-weight: 600; }
+
+    /* Analyze button */
+    .analyze-btn {
+      width: 100%; padding: 13px; border-radius: 10px; border: none;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      background: var(--blue-600); color: var(--white);
+      transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 4px 12px rgba(26,95,180,.3);
+    }
+    .analyze-btn:hover:not(:disabled) { background: var(--blue-800); transform: translateY(-1px); }
+    .analyze-btn:disabled { background: var(--gray-300); cursor: not-allowed; box-shadow: none; transform: none; }
+    .analyze-btn.loading { background: var(--blue-400); }
+
+    /* Loading spinner */
+    .spinner {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: var(--white);
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── MAP AREA ── */
+    #map {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* ── RESULTS PANEL ── */
+    .results-panel {
+      width: var(--results-w); flex-shrink: 0;
+      background: var(--white); border-left: 1px solid var(--gray-300);
+      display: flex; flex-direction: column; overflow-y: auto;
+      transform: translateX(var(--results-w)); transition: transform .35s ease;
+      z-index: 100;
+    }
+    .results-panel.open { transform: translateX(0); }
+
+    .results-header {
+      padding: 18px 20px; border-bottom: 1px solid var(--gray-100);
+      background: linear-gradient(135deg, var(--green-lt), var(--white));
+    }
+    .results-header h3 { font-size: 15px; font-weight: 800; color: var(--blue-900); margin-bottom: 4px; }
+    .results-header p { font-size: 12px; color: var(--gray-600); }
+    .results-close {
+      float: right; background: none; border: none; font-size: 18px;
+      cursor: pointer; color: var(--gray-400); margin-top: -2px;
+    }
+    .results-close:hover { color: var(--gray-900); }
+
+    /* Optimal result card */
+    .optimal-card {
+      margin: 16px; padding: 16px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--green), var(--green-dk));
+      color: var(--white);
+    }
+    .optimal-card .oc-badge { font-size: 10px; font-weight: 700; opacity: .8; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+    .optimal-card .oc-dist { font-size: 28px; font-weight: 900; line-height: 1; }
+    .optimal-card .oc-dist-label { font-size: 12px; opacity: .85; margin-bottom: 10px; }
+    .optimal-card .oc-coords { font-size: 11px; font-family: monospace; opacity: .8; background: rgba(0,0,0,.15); padding: 5px 8px; border-radius: 6px; }
+
+    /* Competitors list */
+    .section-head { padding: 14px 16px 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); }
+    .competitor-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 16px; border-bottom: 1px solid var(--gray-100);
+      transition: background .15s; cursor: pointer;
+    }
+    .competitor-item:hover { background: var(--gray-100); }
+    .comp-number {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--red); color: var(--white);
+      font-size: 10px; font-weight: 800; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; margin-top: 2px;
+    }
+    .comp-info { flex: 1; }
+    .comp-name { font-size: 13px; font-weight: 600; color: var(--gray-900); }
+    .comp-addr { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+    .comp-dist { font-size: 12px; font-weight: 700; color: var(--orange); white-space: nowrap; margin-top: 2px; }
+
+    /* Top 3 alternatives */
+    .alt-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px; border-bottom: 1px solid var(--gray-100);
+      cursor: pointer; transition: background .15s;
+    }
+    .alt-item:hover { background: var(--blue-50); }
+    .alt-rank {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800;
+    }
+    .alt-rank.r1 { background: var(--green); color: var(--white); }
+    .alt-rank.r2 { background: var(--blue-500); color: var(--white); }
+    .alt-rank.r3 { background: var(--orange); color: var(--white); }
+    .alt-info { flex: 1; }
+    .alt-dist { font-size: 14px; font-weight: 800; color: var(--blue-800); }
+    .alt-coords { font-size: 10px; color: var(--gray-400); font-family: monospace; }
+    .alt-badge { font-size: 10px; padding: 2px 7px; border-radius: 999px; font-weight: 600; }
+    .alt-badge.best { background: var(--green-lt); color: var(--green-dk); }
+    .alt-badge.good { background: var(--blue-50); color: var(--blue-600); }
+
+    /* PDF export */
+    .export-section { padding: 16px; margin-top: auto; border-top: 1px solid var(--gray-100); }
+    .export-btn {
+      width: 100%; padding: 11px; border-radius: 8px; font-size: 14px; font-weight: 700;
+      cursor: pointer; border: 2px solid var(--blue-400); color: var(--blue-600);
+      background: var(--white); display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all .2s;
+    }
+    .export-btn:hover { background: var(--blue-50); border-color: var(--blue-600); }
+    .export-note { font-size: 11px; color: var(--gray-400); text-align: center; margin-top: 6px; }
+
+    /* ── MAP CONTROLS OVERLAY ── */
+    .map-overlay-tip {
+      position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: rgba(13,43,94,.85); color: var(--white);
+      font-size: 12px; font-weight: 500; padding: 8px 16px; border-radius: 999px;
+      backdrop-filter: blur(4px); z-index: 50; white-space: nowrap;
+      pointer-events: none; transition: opacity .3s;
+    }
+    .map-legend {
+      position: absolute; bottom: 24px; right: 24px;
+      background: var(--white); border-radius: 10px;
+      padding: 12px 14px; z-index: 50;
+      border: 1px solid var(--gray-300);
+      box-shadow: 0 4px 16px rgba(0,0,0,.1);
+      font-size: 11px;
+    }
+    .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; color: var(--gray-600); }
+    .legend-row:last-child { margin-bottom: 0; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      text-align: center; pointer-events: none; z-index: 10;
+      background: rgba(255,255,255,.9); border-radius: 16px;
+      padding: 32px 40px; box-shadow: 0 8px 32px rgba(0,0,0,.1);
+      border: 1px solid var(--gray-300);
+    }
+    .empty-state .es-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state h3 { font-size: 16px; font-weight: 700; color: var(--blue-900); margin-bottom: 6px; }
+    .empty-state p { font-size: 13px; color: var(--gray-600); max-width: 240px; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: var(--gray-900); color: var(--white); padding: 10px 20px;
+      border-radius: 8px; font-size: 13px; font-weight: 500; z-index: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,.2);
+      transition: transform .3s ease; white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- ── TOP BAR ── -->
+<div class="topbar">
+  <a href="landing.html" class="topbar-logo">
+    📍 <span>Bussiness<em>Locator</em></span>
+  </a>
+  <div class="topbar-breadcrumb">
+    <a href="landing.html">Inicio</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>Nuevo análisis</span>
+  </div>
+  <div class="topbar-actions">
+    <span class="topbar-plan">Plan Gratis · 2/3 búsquedas</span>
+    <div class="topbar-avatar" title="Exe">EX</div>
+  </div>
+</div>
+
+<!-- ── MAIN LAYOUT ── -->
+<div class="main-layout">
+
+  <!-- ── SIDEBAR ── -->
+  <div class="sidebar">
+
+    <!-- STEP 1: Business type -->
+    <div class="sidebar-section">
+      <div class="sidebar-step">
+        <div class="step-badge active" id="badge1">1</div>
+        <span class="step-label">Tipo de negocio</span>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Buscar rubro</div>
+        <div class="search-wrap">
+          <input
+            class="search-input" id="businessInput"
+            type="text" placeholder="Ej: pescadería, farmacia..."
+            autocomplete="off"
+          />
+          <span class="search-icon">🔍</span>
+          <div class="autocomplete-list" id="autocompleteList"></div>
+        </div>
+      </div>
+
+      <div class="field-label" style="margin-bottom:8px;">Categorías frecuentes</div>
+      <div class="category-chips" id="categoryChips">
+        <div class="chip" data-value="Pescadería">🐟 Pescadería</div>
+        <div class="chip" data-value="Farmacia">💊 Farmacia</div>
+        <div class="chip" data-value="Panadería">🍞 Panadería</div>
+        <div class="chip" data-value="Ferretería">🔧 Ferretería</div>
+        <div class="chip" data-value="Peluquería">✂️ Peluquería</div>
+        <div class="chip" data-value="Kiosco">🏪 Kiosco</div>
+        <div class="chip" data-value="Veterinaria">🐾 Veterinaria</div>
+        <div class="chip" data-value="Gimnasio">🏋️ Gimnasio</div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Zone -->
+    <div class="sidebar-section">
+      <div class="sidebar-step">
+        <div class="step-badge pending" id="badge2">2</div>
+        <span class="step-label pending" id="label2">Definir zona</span>
+      </div>
+
+      <div class="zone-toggle" id="zoneToggle">
+        <div class="zone-btn active" data-mode="radius" onclick="setZoneMode('radius')">⭕ Radio</div>
+        <div class="zone-btn" data-mode="polygon" onclick="setZoneMode('polygon')">🔷 Polígono</div>
+      </div>
+
+      <div id="radiusMode">
+        <div class="field-group">
+          <div class="field-label">Centro de la zona</div>
+          <input
+            class="search-input" id="centerInput"
+            type="text" placeholder="Buscar dirección o ciudad..."
+          />
+        </div>
+        <div class="field-group">
+          <div class="field-label">Radio de búsqueda</div>
+          <div class="slider-wrap">
+            <div class="slider-row">
+              <span style="font-size:12px;color:var(--gray-400)">0.5 km</span>
+              <span class="slider-value" id="radiusValue">2.0 km</span>
+              <span style="font-size:12px;color:var(--gray-400)">10 km</span>
+            </div>
+            <input type="range" id="radiusSlider" min="0.5" max="10" step="0.5" value="2" />
+          </div>
+        </div>
+      </div>
+
+      <div id="polygonMode" style="display:none;">
+        <div style="font-size:12px;color:var(--gray-600);background:var(--blue-50);border-radius:8px;padding:10px;margin-bottom:10px;">
+          💡 Hacé clic en el mapa para agregar puntos al polígono. Cerrá haciendo doble clic.
+        </div>
+        <div class="coord-display" id="polygonCoords">
+          <span style="color:var(--gray-400)">Sin puntos todavía</span>
+        </div>
+        <button onclick="clearPolygon()" style="margin-top:8px;width:100%;padding:7px;border-radius:6px;border:1px solid var(--gray-300);background:var(--white);font-size:12px;cursor:pointer;color:var(--gray-600);">
+          🗑 Borrar polígono
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Analyze -->
+    <div class="sidebar-section">
+      <div class="sidebar-step">
+        <div class="step-badge pending" id="badge3">3</div>
+        <span class="step-label pending" id="label3">Analizar</span>
+      </div>
+
+      <div id="readyInfo" style="display:none;background:var(--green-lt);border-radius:8px;padding:10px;margin-bottom:14px;font-size:12px;color:var(--green-dk);">
+        <strong>✅ Listo para analizar</strong><br/>
+        <span id="readySummary"></span>
+      </div>
+
+      <button class="analyze-btn" id="analyzeBtn" disabled onclick="runAnalysis()">
+        🔍 Analizar zona
+      </button>
+
+      <div style="font-size:11px;color:var(--gray-400);text-align:center;margin-top:8px;">
+        Consultando datos en tiempo real · Puede tardar unos segundos
+      </div>
+    </div>
+
+    <!-- Previous analyses -->
+    <div class="sidebar-section">
+      <div class="field-label" style="margin-bottom:10px;">Análisis recientes</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div onclick="loadRecent(0)" style="padding:8px 10px;border-radius:8px;background:var(--gray-100);cursor:pointer;transition:background .15s;" onmouseover="this.style.background='var(--blue-50)'" onmouseout="this.style.background='var(--gray-100)'">
+          <div style="font-size:12px;font-weight:600;color:var(--gray-900);">🐟 Pescadería · Belén Escobar</div>
+          <div style="font-size:11px;color:var(--gray-400);margin-top:2px;">Hace 2 días · 3 competidores</div>
+        </div>
+        <div style="padding:8px 10px;border-radius:8px;background:var(--gray-100);cursor:pointer;transition:background .15s;" onmouseover="this.style.background='var(--blue-50)'" onmouseout="this.style.background='var(--gray-100)'">
+          <div style="font-size:12px;font-weight:600;color:var(--gray-900);">💊 Farmacia · Pilar, Bs As</div>
+          <div style="font-size:11px;color:var(--gray-400);margin-top:2px;">Hace 5 días · 7 competidores</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MAP ── -->
+  <div style="flex:1;position:relative;">
+    <div id="map"></div>
+
+    <div class="empty-state" id="emptyState">
+      <div class="es-icon">🗺️</div>
+      <h3>Tu análisis aparecerá aquí</h3>
+      <p>Completá los pasos de la izquierda para comenzar</p>
+    </div>
+
+    <div class="map-overlay-tip" id="mapTip">
+      👆 Hacé clic en el mapa para marcar el centro de tu zona
+    </div>
+
+    <div class="map-legend" id="mapLegend" style="display:none;">
+      <div style="font-size:10px;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Referencias</div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--green);"></div> Ubicación óptima</div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--red);"></div> Competidores existentes</div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--blue-500);border:2px dashed var(--blue-500);background:transparent;width:14px;height:14px;border-radius:0;"></div> Zona analizada</div>
+    </div>
+  </div>
+
+  <!-- ── RESULTS PANEL ── -->
+  <div class="results-panel" id="resultsPanel">
+    <div class="results-header">
+      <button class="results-close" onclick="closeResults()">✕</button>
+      <h3>✅ Análisis completado</h3>
+      <p id="resultsSummaryText">Pescadería · Belén Escobar · Radio 2 km</p>
+    </div>
+
+    <div class="optimal-card">
+      <div class="oc-badge">📍 Ubicación óptima recomendada</div>
+      <div class="oc-dist" id="optimalDist">1.32 km</div>
+      <div class="oc-dist-label">del competidor más cercano</div>
+      <div class="oc-coords" id="optimalCoords">-34.3481, -58.8042</div>
+    </div>
+
+    <div class="section-head">🔴 Competidores detectados</div>
+
+    <div id="competitorsList">
+      <div class="competitor-item">
+        <div class="comp-number">1</div>
+        <div class="comp-info">
+          <div class="comp-name">Pescadería El Mar</div>
+          <div class="comp-addr">Av. San Martín 428</div>
+          <div class="comp-dist">0.8 km del punto óptimo</div>
+        </div>
+      </div>
+      <div class="competitor-item">
+        <div class="comp-number">2</div>
+        <div class="comp-info">
+          <div class="comp-name">Mariscos Don Pedro</div>
+          <div class="comp-addr">Belgrano 115</div>
+          <div class="comp-dist">1.32 km del punto óptimo</div>
+        </div>
+      </div>
+      <div class="competitor-item">
+        <div class="comp-number">3</div>
+        <div class="comp-info">
+          <div class="comp-name">La Pescadería</div>
+          <div class="comp-addr">Rivadavia 890</div>
+          <div class="comp-dist">1.05 km del punto óptimo</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-head">🏆 Top 3 mejores ubicaciones</div>
+
+    <div id="altList">
+      <div class="alt-item">
+        <div class="alt-rank r1">1</div>
+        <div class="alt-info">
+          <div class="alt-dist">1.32 km libre</div>
+          <div class="alt-coords">-34.3481, -58.8042</div>
+        </div>
+        <span class="alt-badge best">Óptimo</span>
+      </div>
+      <div class="alt-item">
+        <div class="alt-rank r2">2</div>
+        <div class="alt-info">
+          <div class="alt-dist">1.15 km libre</div>
+          <div class="alt-coords">-34.3510, -58.7980</div>
+        </div>
+        <span class="alt-badge good">Bueno</span>
+      </div>
+      <div class="alt-item">
+        <div class="alt-rank r2">3</div>
+        <div class="alt-info">
+          <div class="alt-dist">0.98 km libre</div>
+          <div class="alt-coords">-34.3455, -58.8110</div>
+        </div>
+        <span class="alt-badge good">Bueno</span>
+      </div>
+    </div>
+
+    <div class="export-section">
+      <button class="export-btn" onclick="showToast('📄 Generando PDF... (función disponible en plan Pro)')">
+        📄 Descargar informe PDF
+      </button>
+      <div class="export-note">Requiere plan Pro · <a href="landing.html#precios" style="color:var(--blue-500);">Actualizar plan</a></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────
+// APP STATE
+// ─────────────────────────────────────
+const state = {
+  businessType: null,
+  zoneMode: 'radius',
+  center: null,      // [lat, lng]
+  radius: 2.0,       // km
+  polygonPoints: [],
+  analyzed: false,
+};
+
+// ─────────────────────────────────────
+// LEAFLET MAP
+// ─────────────────────────────────────
+const map = L.map('map', { zoomControl: true }).setView([-34.349, -58.803], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors',
+  maxZoom: 18,
+}).addTo(map);
+
+let zoneCircle = null;
+let centerMarker = null;
+let competitorMarkers = [];
+let optimalMarker = null;
+let polygonLayer = null;
+
+// Click on map → set center
+map.on('click', function(e) {
+  if (state.zoneMode === 'radius') {
+    setCenterOnMap(e.latlng.lat, e.latlng.lng);
+    document.getElementById('centerInput').value =
+      `${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
+  } else {
+    state.polygonPoints.push([e.latlng.lat, e.latlng.lng]);
+    updatePolygonLayer();
+    updatePolygonCoords();
+  }
+});
+
+map.on('dblclick', function(e) {
+  if (state.zoneMode === 'polygon' && state.polygonPoints.length >= 3) {
+    showToast('✅ Polígono cerrado. Ahora podés analizar.');
+    checkReady();
+  }
+});
+
+function setCenterOnMap(lat, lng) {
+  state.center = [lat, lng];
+  if (centerMarker) map.removeLayer(centerMarker);
+  centerMarker = L.circleMarker([lat, lng], {
+    radius: 6, color: '#1a5fb4', fillColor: '#2e86c1', fillOpacity: 1, weight: 2,
+  }).addTo(map);
+  updateZoneCircle();
+  activateStep(2);
+  checkReady();
+}
+
+function updateZoneCircle() {
+  if (!state.center) return;
+  if (zoneCircle) map.removeLayer(zoneCircle);
+  zoneCircle = L.circle(state.center, {
+    radius: state.radius * 1000,
+    color: '#2e86c1', fillColor: '#2e86c1', fillOpacity: 0.08,
+    dashArray: '8,5', weight: 2,
+  }).addTo(map);
+}
+
+function updatePolygonLayer() {
+  if (polygonLayer) map.removeLayer(polygonLayer);
+  if (state.polygonPoints.length < 2) return;
+  polygonLayer = L.polygon(state.polygonPoints, {
+    color: '#2e86c1', fillColor: '#2e86c1', fillOpacity: 0.08,
+    dashArray: '8,5', weight: 2,
+  }).addTo(map);
+  if (state.polygonPoints.length >= 3) {
+    state.center = centroid(state.polygonPoints);
+    checkReady();
+  }
+}
+
+function centroid(pts) {
+  const lat = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+  const lng = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+  return [lat, lng];
+}
+
+function updatePolygonCoords() {
+  const el = document.getElementById('polygonCoords');
+  if (state.polygonPoints.length === 0) {
+    el.innerHTML = '<span style="color:var(--gray-400)">Sin puntos todavía</span>';
+    return;
+  }
+  el.innerHTML = state.polygonPoints.map((p, i) =>
+    `Punto ${i+1}: <span>${p[0].toFixed(5)}, ${p[1].toFixed(5)}</span>`
+  ).join('<br/>');
+}
+
+function clearPolygon() {
+  state.polygonPoints = [];
+  if (polygonLayer) { map.removeLayer(polygonLayer); polygonLayer = null; }
+  updatePolygonCoords();
+  state.center = null;
+  checkReady();
+}
+
+// ─────────────────────────────────────
+// BUSINESS TYPE
+// ─────────────────────────────────────
+const businesses = [
+  'Pescadería','Farmacia','Panadería','Ferretería','Peluquería','Kiosco',
+  'Veterinaria','Gimnasio','Pizzería','Hamburguesería','Heladería','Carnicería',
+  'Frutería','Lavandería','Librería','Floristería','Óptica','Zapatería',
+  'Rotisería','Almacén','Bar','Cafetería','Vinoteca','Confitería','Lencería',
+];
+const icons = {
+  'Pescadería':'🐟','Farmacia':'💊','Panadería':'🍞','Ferretería':'🔧','Peluquería':'✂️',
+  'Kiosco':'🏪','Veterinaria':'🐾','Gimnasio':'🏋️','Pizzería':'🍕','Hamburguesería':'🍔',
+  'Heladería':'🍦','Carnicería':'🥩','Frutería':'🍎','Lavandería':'👕','Librería':'📚',
+  'Floristería':'🌸','Óptica':'👓','Zapatería':'👟','Rotisería':'🍗','Almacén':'🛒',
+  'Bar':'🍺','Cafetería':'☕','Vinoteca':'🍷','Confitería':'🎂','Lencería':'👙',
+};
+
+const input = document.getElementById('businessInput');
+const list  = document.getElementById('autocompleteList');
+
+input.addEventListener('input', () => {
+  const q = input.value.trim();
+  if (!q) { list.classList.remove('open'); return; }
+  const matches = businesses.filter(b => b.toLowerCase().includes(q.toLowerCase()));
+  const isExactMatch = businesses.some(b => b.toLowerCase() === q.toLowerCase());
+
+  let html = matches.slice(0, 6).map(b =>
+    `<div class="autocomplete-item" onclick="selectBusiness('${b}')">
+      <span>${icons[b]||'🏪'}</span> ${b}
+    </div>`
+  ).join('');
+
+  // Siempre mostrar opción de texto libre si no es coincidencia exacta
+  if (!isExactMatch) {
+    html += `<div class="autocomplete-item" style="border-top:1px solid var(--gray-100);color:var(--blue-600);"
+      onclick="selectBusiness('${q.replace(/'/g,"\\'")}')">
+      <span>🔍</span> Usar <strong>"${q}"</strong> como rubro personalizado
+    </div>`;
+  }
+
+  list.innerHTML = html;
+  list.classList.add('open');
+});
+
+// Confirmar con Enter
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const q = input.value.trim();
+    // Si hay un item resaltado en la lista, usarlo; si no, usar el texto libre
+    const highlighted = list.querySelector('.autocomplete-item.highlighted');
+    if (highlighted) {
+      highlighted.click();
+    } else if (q) {
+      selectBusiness(q);
+    }
+    e.preventDefault();
+  }
+  // Navegar la lista con flechas
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    const items = [...list.querySelectorAll('.autocomplete-item')];
+    if (!items.length) return;
+    const cur = items.findIndex(i => i.classList.contains('highlighted'));
+    items.forEach(i => i.classList.remove('highlighted'));
+    const next = e.key === 'ArrowDown'
+      ? (cur < items.length - 1 ? cur + 1 : 0)
+      : (cur > 0 ? cur - 1 : items.length - 1);
+    items[next].classList.add('highlighted');
+    e.preventDefault();
+  }
+  if (e.key === 'Escape') {
+    list.classList.remove('open');
+  }
+});
+
+// Confirmar al perder el foco si hay texto escrito y no se eligió nada
+input.addEventListener('blur', () => {
+  setTimeout(() => {
+    const q = input.value.trim();
+    // Solo confirmar si el texto no empieza con un emoji ya seleccionado
+    if (q && !state.businessType && !q.match(/^[\u{1F300}-\u{1FFFF}]/u)) {
+      selectBusiness(q);
+    }
+    list.classList.remove('open');
+  }, 180); // delay para permitir que el click en la lista se procese primero
+});
+
+function selectBusiness(name) {
+  // Limpiar el nombre si viene con emoji al inicio (re-selección)
+  const cleanName = name.replace(/^[\u{1F300}-\u{1FFFF}\u{2600}-\u{27BF}]\s*/u, '').trim();
+  state.businessType = cleanName;
+  const icon = icons[cleanName] || '🏪';
+  input.value = `${icon} ${cleanName}`;
+  list.classList.remove('open');
+  // Highlight chip si coincide
+  document.querySelectorAll('#categoryChips .chip').forEach(c => {
+    c.classList.toggle('selected', c.dataset.value === cleanName);
+  });
+  activateStep(2);
+  checkReady();
+  showToast(`✅ Rubro seleccionado: ${cleanName}`);
+}
+
+document.querySelectorAll('#categoryChips .chip').forEach(chip => {
+  chip.addEventListener('click', () => selectBusiness(chip.dataset.value));
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) list.classList.remove('open');
+});
+
+// ─────────────────────────────────────
+// ZONE MODE & RADIUS
+// ─────────────────────────────────────
+function setZoneMode(mode) {
+  state.zoneMode = mode;
+  document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  document.getElementById('radiusMode').style.display  = mode === 'radius' ? '' : 'none';
+  document.getElementById('polygonMode').style.display = mode === 'polygon' ? '' : 'none';
+  document.getElementById('mapTip').textContent =
+    mode === 'radius'
+      ? '👆 Hacé clic en el mapa para marcar el centro de tu zona'
+      : '👆 Hacé clic para agregar puntos al polígono · Doble clic para cerrar';
+}
+
+const radiusSlider = document.getElementById('radiusSlider');
+radiusSlider.addEventListener('input', () => {
+  state.radius = parseFloat(radiusSlider.value);
+  document.getElementById('radiusValue').textContent = state.radius.toFixed(1) + ' km';
+  if (state.center) updateZoneCircle();
+});
+
+// Center input (geocode simulation)
+document.getElementById('centerInput').addEventListener('change', function() {
+  const val = this.value.trim().toLowerCase();
+  // Simple lookup for demo
+  const geocode = {
+    'belén escobar': [-34.349, -58.803],
+    'belen escobar': [-34.349, -58.803],
+    'escobar': [-34.349, -58.803],
+    'palermo': [-34.577, -58.431],
+    'belgrano': [-34.557, -58.461],
+    'pilar': [-34.459, -58.914],
+  };
+  let found = null;
+  for (const [k,v] of Object.entries(geocode)) {
+    if (val.includes(k)) { found = v; break; }
+  }
+  if (found) {
+    setCenterOnMap(found[0], found[1]);
+    map.setView(found, 14);
+    showToast('📍 Centro marcado en el mapa');
+  } else {
+    // Try to parse coordinates
+    const coords = val.split(',').map(Number);
+    if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+      setCenterOnMap(coords[0], coords[1]);
+      map.setView(coords, 14);
+    } else {
+      showToast('⚠️ Ubicación no encontrada. Probá haciendo clic en el mapa.');
+    }
+  }
+});
+
+// ─────────────────────────────────────
+// STEP MANAGEMENT
+// ─────────────────────────────────────
+function activateStep(n) {
+  if (n >= 2) {
+    document.getElementById('badge2').className = 'step-badge active';
+    document.getElementById('label2').className = 'step-label';
+  }
+  if (n >= 3) {
+    document.getElementById('badge3').className = 'step-badge active';
+    document.getElementById('label3').className = 'step-label';
+  }
+}
+
+function checkReady() {
+  const hasType   = !!state.businessType;
+  const hasZone   = state.center !== null;
+  const btn       = document.getElementById('analyzeBtn');
+  const readyInfo = document.getElementById('readyInfo');
+  const readySummary = document.getElementById('readySummary');
+
+  if (hasType && hasZone) {
+    btn.disabled = false;
+    readyInfo.style.display = '';
+    readySummary.textContent =
+      `${icons[state.businessType]||'🏪'} ${state.businessType} · ` +
+      (state.zoneMode === 'radius'
+        ? `Radio ${state.radius} km`
+        : `Polígono (${state.polygonPoints.length} puntos)`);
+    activateStep(3);
+    document.getElementById('badge1').className = 'step-badge done';
+    document.getElementById('badge2').className = 'step-badge done';
+    document.getElementById('mapTip').style.opacity = '0';
+  } else {
+    btn.disabled = true;
+    readyInfo.style.display = 'none';
+    document.getElementById('mapTip').style.opacity = '1';
+  }
+}
+
+// ─────────────────────────────────────
+// GEO UTILITIES
+// ─────────────────────────────────────
+
+// Distancia Haversine en km entre dos coordenadas
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.asin(Math.sqrt(a));
+}
+
+// Grid search: punto dentro del círculo más alejado de todos los competidores
+function findOptimalPoint(centerLat, centerLng, radiusKm, competitors) {
+  const steps = 55;
+  const latRange = radiusKm / 111;
+  const lngRange = radiusKm / (111 * Math.cos(centerLat * Math.PI / 180));
+  const candidates = [];
+
+  for (let i = 0; i <= steps; i++) {
+    for (let j = 0; j <= steps; j++) {
+      const lat = (centerLat - latRange) + (2 * latRange * i / steps);
+      const lng = (centerLng - lngRange) + (2 * lngRange * j / steps);
+      if (haversine(centerLat, centerLng, lat, lng) > radiusKm) continue;
+      const minDist = competitors.length === 0
+        ? haversine(centerLat, centerLng, lat, lng)
+        : Math.min(...competitors.map(c => haversine(lat, lng, c.lat, c.lng)));
+      candidates.push({ lat, lng, minDist });
+    }
+  }
+
+  candidates.sort((a, b) => b.minDist - a.minDist);
+  const optimal = candidates[0] || { lat: centerLat, lng: centerLng, minDist: radiusKm };
+  return { optimal, top3: candidates.slice(0, 3) };
+}
+
+// ─────────────────────────────────────
+// OVERPASS API — DATOS REALES DE OSM
+// ─────────────────────────────────────
+
+const osmTagMap = [
+  { terms: ['pescadería','marisquería','marisco','pescado'],  tag: '["shop"="fishmonger"]' },
+  { terms: ['farmacia','droguería'],                          tag: '["amenity"="pharmacy"]' },
+  { terms: ['panadería','panadero'],                          tag: '["shop"="bakery"]' },
+  { terms: ['ferretería','ferretero'],                        tag: '["shop"="hardware"]' },
+  { terms: ['peluquería','barbería','peluquero','barbero'],   tag: '["shop"="hairdresser"]' },
+  { terms: ['kiosco','quiosco'],                              tag: '["shop"="kiosk"]' },
+  { terms: ['almacén','almacen','despensa'],                  tag: '["shop"="convenience"]' },
+  { terms: ['supermercado','super'],                          tag: '["shop"="supermarket"]' },
+  { terms: ['veterinaria','veterinario'],                     tag: '["amenity"="veterinary"]' },
+  { terms: ['gimnasio','gym','fitness'],                      tag: '["leisure"="fitness_centre"]' },
+  { terms: ['heladería','helado'],                            tag: '["shop"="ice_cream"]' },
+  { terms: ['carnicería','carnicero'],                        tag: '["shop"="butcher"]' },
+  { terms: ['frutería','verdulería','verdulero'],             tag: '["shop"="greengrocer"]' },
+  { terms: ['lavandería','lavado'],                           tag: '["shop"="laundry"]' },
+  { terms: ['librería','libro'],                              tag: '["shop"="books"]' },
+  { terms: ['floristería','florería'],                        tag: '["shop"="florist"]' },
+  { terms: ['óptica','optica','lentes'],                      tag: '["shop"="optician"]' },
+  { terms: ['zapatería','calzado','zapato'],                  tag: '["shop"="shoes"]' },
+  { terms: ['bar','pub','boliche'],                           tag: '["amenity"="bar"]' },
+  { terms: ['cafetería','café','cafe','coffee'],              tag: '["amenity"="cafe"]' },
+  { terms: ['restaurante','restaurant','rotisería'],          tag: '["amenity"="restaurant"]' },
+  { terms: ['pizzería','pizza'],                              tag: '["amenity"="restaurant"]["cuisine"="pizza"]' },
+  { terms: ['hamburguesería','hamburguesa'],                  tag: '["amenity"="fast_food"]' },
+  { terms: ['banco'],                                         tag: '["amenity"="bank"]' },
+  { terms: ['hotel','hostel','hospedaje'],                    tag: '["tourism"~"hotel|hostel|guest_house"]' },
+  { terms: ['hospital','clínica clinica','sanatorio'],        tag: '["amenity"~"hospital|clinic"]' },
+  { terms: ['escuela','colegio','primaria','secundaria'],     tag: '["amenity"="school"]' },
+  { terms: ['dentista','odontología','odontologia','odontólogo'], tag: '["amenity"="dentist"]' },
+  { terms: ['médico','medico','doctor','consultorio','neurolog','cardiolog','pediatr','oftalm','clínica médica'], tag: '["amenity"~"doctors|clinic|hospital"]' },
+  { terms: ['estación','nafta','combustible','gasolinera'],   tag: '["amenity"="fuel"]' },
+  { terms: ['taller','mecánico','mecanico','automotor'],      tag: '["shop"="car_repair"]' },
+  { terms: ['parrilla','asado','parrillada'],                 tag: '["amenity"="restaurant"]["cuisine"="steak_house"]' },
+];
+
+function buildOverpassQuery(lat, lng, radiusM, businessType) {
+  const lower = businessType.toLowerCase();
+  const around = `(around:${radiusM},${lat},${lng})`;
+
+  // Buscar tag conocido
+  for (const { terms, tag } of osmTagMap) {
+    if (terms.some(t => lower.includes(t))) {
+      return `[out:json][timeout:30];\n(\n  node${tag}${around};\n  way${tag}${around};\n  relation${tag}${around};\n);\nout center;`;
+    }
+  }
+
+  // Fallback: búsqueda por nombre libre usando regex OR con palabras clave
+  const stopwords = new Set(['de','del','la','el','los','las','un','una','y','o','en','por','para','con']);
+  const words = businessType.split(/\s+/).filter(w => w.length > 2 && !stopwords.has(w.toLowerCase()));
+  const regex = words.length ? words.join('|') : businessType;
+  return `[out:json][timeout:30];\n(\n  node["name"~"${regex}",i]${around};\n  way["name"~"${regex}",i]${around};\n);\nout center;`;
+}
+
+// Endpoints de Overpass en orden de prioridad (el primero que responda bien)
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+];
+
+async function queryOverpass(query) {
+  const body = 'data=' + encodeURIComponent(query);
+  const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+  let lastError;
+
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const res = await fetch(endpoint, { method: 'POST', headers, body });
+      if (!res.ok) { lastError = new Error(`HTTP ${res.status} en ${endpoint}`); continue; }
+
+      let data;
+      try { data = await res.json(); }
+      catch(e) { lastError = new Error('Respuesta no válida (no es JSON)'); continue; }
+
+      if (!Array.isArray(data.elements)) {
+        lastError = new Error(data.remark || 'Respuesta inesperada de OpenStreetMap');
+        continue;
+      }
+      return data; // éxito
+    } catch(e) {
+      lastError = e;
+    }
+  }
+  throw lastError || new Error('No se pudo conectar con ningún servidor de OpenStreetMap');
+}
+
+async function fetchRealCompetitors(lat, lng, radiusKm, businessType) {
+  const radiusM = Math.round(radiusKm * 1000);
+  const query = buildOverpassQuery(lat, lng, radiusM, businessType);
+  const data = await queryOverpass(query);
+
+  return (data.elements || []).map(el => {
+    const clat = el.lat ?? el.center?.lat;
+    const clng = el.lon  ?? el.center?.lon;
+    if (!clat || !clng) return null;
+    const name = el.tags?.name || el.tags?.['name:es'] || `${businessType} (sin nombre)`;
+    const addrParts = [el.tags?.['addr:street'], el.tags?.['addr:housenumber']].filter(Boolean);
+    const addr = addrParts.length ? addrParts.join(' ') : (el.tags?.['addr:city'] || 'Sin dirección registrada');
+    return { name, addr, lat: clat, lng: clng };
+  }).filter(Boolean);
+}
+
+// ─────────────────────────────────────
+// ANÁLISIS PRINCIPAL
+// ─────────────────────────────────────
+async function runAnalysis() {
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.classList.add('loading');
+  document.getElementById('emptyState').style.display = 'none';
+
+  // Limpiar búsqueda anterior
+  competitorMarkers.forEach(m => map.removeLayer(m));
+  competitorMarkers = [];
+  if (optimalMarker) { map.removeLayer(optimalMarker); optimalMarker = null; }
+
+  const [lat, lng] = state.center;
+
+  try {
+    btn.innerHTML = '<div class="spinner"></div> Consultando OpenStreetMap...';
+    const competitors = await fetchRealCompetitors(lat, lng, state.radius, state.businessType);
+
+    btn.innerHTML = '<div class="spinner"></div> Calculando ubicación óptima...';
+    await new Promise(r => setTimeout(r, 80)); // ceder hilo para actualizar la UI
+    const { optimal, top3 } = findOptimalPoint(lat, lng, state.radius, competitors);
+
+    renderResults(competitors, optimal, top3);
+
+  } catch (err) {
+    console.error('[BussinessLocator] Error:', err);
+    const msg = err.message || String(err);
+    showToast('⚠️ ' + msg, 8000);
+    btn.classList.remove('loading');
+    btn.innerHTML = '🔍 Analizar zona';
+    btn.disabled = false;
+  }
+}
+
+function renderResults(competitors, optimal, top3) {
+  const btn = document.getElementById('analyzeBtn');
+  const [lat, lng] = state.center;
+
+  // Íconos
+  const redIcon = L.divIcon({
+    html: `<div style="width:18px;height:18px;border-radius:50%;background:#e74c3c;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:white;">C</div>`,
+    className: '', iconSize: [18, 18], iconAnchor: [9, 9],
+  });
+  const greenIcon = L.divIcon({
+    html: `<div style="width:26px;height:26px;border-radius:50%;background:#27ae60;border:3px solid white;box-shadow:0 0 0 4px rgba(39,174,96,.3),0 4px 12px rgba(0,0,0,.3);animation:pulse 2s ease-in-out infinite;"></div><style>@keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(39,174,96,.3),0 4px 12px rgba(0,0,0,.25)}50%{box-shadow:0 0 0 10px rgba(39,174,96,.1),0 4px 12px rgba(0,0,0,.25)}}</style>`,
+    className: '', iconSize: [26, 26], iconAnchor: [13, 13],
+  });
+
+  // Pintar competidores
+  competitors.forEach(c => {
+    const m = L.marker([c.lat, c.lng], { icon: redIcon })
+      .bindPopup(`<b>${c.name}</b><br/><small>${c.addr}</small>`)
+      .addTo(map);
+    competitorMarkers.push(m);
+  });
+
+  // Pintar punto óptimo
+  optimalMarker = L.marker([optimal.lat, optimal.lng], { icon: greenIcon })
+    .bindPopup(`<b>✅ Ubicación óptima</b><br/><small>${optimal.minDist.toFixed(2)} km del rival más cercano</small>`)
+    .addTo(map)
+    .openPopup();
+
+  document.getElementById('mapLegend').style.display = '';
+
+  // Ajustar vista
+  const allPoints = [...competitors.map(c => [c.lat, c.lng]), [optimal.lat, optimal.lng], [lat, lng]];
+  if (allPoints.length > 1) {
+    map.fitBounds(L.latLngBounds(allPoints), { padding: [50, 50] });
+  }
+
+  // Panel de resultados
+  document.getElementById('resultsSummaryText').textContent =
+    `${state.businessType} · ${state.zoneMode === 'radius' ? `Radio ${state.radius} km` : 'Zona personalizada'}`;
+  document.getElementById('optimalDist').textContent  = `${optimal.minDist.toFixed(2)} km`;
+  document.getElementById('optimalCoords').textContent = `${optimal.lat.toFixed(5)}, ${optimal.lng.toFixed(5)}`;
+
+  // Lista de competidores
+  if (competitors.length === 0) {
+    document.getElementById('competitorsList').innerHTML = `
+      <div style="padding:20px;text-align:center;">
+        <div style="font-size:32px;margin-bottom:8px;">🎉</div>
+        <div style="font-weight:700;color:var(--green-dk);">¡Sin competidores en la zona!</div>
+        <div style="font-size:12px;color:var(--gray-600);margin-top:4px;">OpenStreetMap no registra negocios de este rubro en el radio elegido.</div>
+      </div>`;
+  } else {
+    document.getElementById('competitorsList').innerHTML = competitors.map((c, i) => {
+      const dist = haversine(optimal.lat, optimal.lng, c.lat, c.lng);
+      return `<div class="competitor-item" onclick="map.setView([${c.lat},${c.lng}],17)" title="Ver en el mapa">
+        <div class="comp-number">${i + 1}</div>
+        <div class="comp-info">
+          <div class="comp-name">${c.name}</div>
+          <div class="comp-addr">${c.addr}</div>
+          <div class="comp-dist">${dist.toFixed(2)} km del punto óptimo</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Top 3 alternativas
+  document.getElementById('altList').innerHTML = top3.map((p, i) => {
+    const cfg = [
+      { cls: 'r1', badge: 'best', label: 'Óptimo' },
+      { cls: 'r2', badge: 'good', label: 'Bueno'  },
+      { cls: 'r2', badge: 'good', label: 'Bueno'  },
+    ][i];
+    return `<div class="alt-item" onclick="map.setView([${p.lat},${p.lng}],15)" title="Ver en el mapa">
+      <div class="alt-rank ${cfg.cls}">${i + 1}</div>
+      <div class="alt-info">
+        <div class="alt-dist">${p.minDist.toFixed(2)} km libre</div>
+        <div class="alt-coords">${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</div>
+      </div>
+      <span class="alt-badge ${cfg.badge}">${cfg.label}</span>
+    </div>`;
+  }).join('');
+
+  // Botón
+  btn.classList.remove('loading');
+  btn.innerHTML = '🔄 Nuevo análisis';
+  btn.disabled = false;
+  btn.onclick = () => resetAnalysis();
+  document.getElementById('badge3').className = 'step-badge done';
+
+  // Abrir panel
+  document.getElementById('resultsPanel').classList.add('open');
+  const msg = competitors.length === 0
+    ? '✅ ¡Sin competidores en la zona! Gran oportunidad.'
+    : `✅ Análisis completado · ${competitors.length} competidores encontrados.`;
+  showToast(msg);
+}
+
+function resetAnalysis() {
+  location.reload();
+}
+
+function closeResults() {
+  document.getElementById('resultsPanel').classList.remove('open');
+}
+
+// ─────────────────────────────────────
+// LOAD RECENT (demo)
+// ─────────────────────────────────────
+function loadRecent(idx) {
+  document.getElementById('businessInput').value = '🐟 Pescadería';
+  state.businessType = 'Pescadería';
+  document.querySelectorAll('#categoryChips .chip').forEach(c => {
+    c.classList.toggle('selected', c.dataset.value === 'Pescadería');
+  });
+  document.getElementById('centerInput').value = 'Belén Escobar';
+  setCenterOnMap(-34.349, -58.803);
+  map.setView([-34.349, -58.803], 14);
+  document.getElementById('radiusSlider').value = '2';
+  state.radius = 2.0;
+  document.getElementById('radiusValue').textContent = '2.0 km';
+  activateStep(3);
+  checkReady();
+  showToast('📂 Análisis reciente cargado');
+}
+
+// ─────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────
+let toastTimeout;
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ─────────────────────────────────────
+// INIT
+// ─────────────────────────────────────
+// Auto-load the demo on first open
+setTimeout(() => loadRecent(0), 400);
+</script>
+</body>
+</html>
