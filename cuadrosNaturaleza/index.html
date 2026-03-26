@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuadros de Naturaleza · Gabriel Banga</title>
+  <style>
+    /* ─── Reset & Base ────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #F8F5EF;
+      --bg2:       #EDE8DC;
+      --surface:   #FFFFFF;
+      --surface2:  #F2ECE0;
+      --border:    #D0C5B0;
+      --text:      #1C2018;
+      --muted:     #7A7660;
+      --green:     #2C7030;
+      --green2:    #3D8C42;
+      --green-lt:  #5BAA40;
+      --gold:      #A87C18;
+      --gold-lt:   #C89C30;
+      --white:     #FFFFFF;
+      --radius:    12px;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Georgia', 'Times New Roman', serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    h1,h2,h3 { font-family: 'Georgia', serif; }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+    button { cursor: pointer; font-family: inherit; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+    section { padding: 5rem 0; }
+    .hidden { display: none !important; }
+
+    /* ─── Nav ────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      background: rgba(255,252,245,.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .85rem 2rem;
+      transform: translateY(-100%);
+      transition: transform .35s ease;
+      box-shadow: 0 2px 16px rgba(0,0,0,.08);
+    }
+    nav.visible { transform: translateY(0); }
+    .nav-brand { font-size: 1rem; color: var(--green); font-style: italic; letter-spacing: .04em; }
+    .nav-links { display: flex; gap: 2rem; font-size: .88rem; color: var(--muted); }
+    .nav-links a { transition: color .2s; }
+    .nav-links a:hover { color: var(--green); }
+    @media(max-width:580px){ .nav-links { gap: 1rem; font-size: .78rem; } }
+
+    /* ─── Hero ────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      background:
+        linear-gradient(to bottom, rgba(10,22,8,.55) 0%, rgba(5,18,5,.7) 65%, var(--bg) 100%),
+        url('hero_rayo.jpg') center/cover no-repeat;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 2rem;
+      position: relative;
+    }
+    .hero-eyebrow {
+      display: inline-block;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.3);
+      color: #D8D0B8;
+      font-size: .78rem;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      padding: .35em 1.2em;
+      border-radius: 30px;
+      margin-bottom: 1.2rem;
+    }
+    .hero-title {
+      font-size: clamp(2.8rem, 7vw, 5.5rem);
+      color: #FFFFFF;
+      letter-spacing: .04em;
+      line-height: 1.1;
+      text-shadow: 0 2px 30px rgba(0,0,0,.5);
+      margin-bottom: .6rem;
+    }
+    .hero-title em { color: #C8D898; font-style: normal; }
+    .hero-subtitle {
+      font-size: clamp(.9rem, 1.8vw, 1.1rem);
+      color: #C8C0A8;
+      max-width: 560px;
+      line-height: 1.6;
+      margin-bottom: 2.5rem;
+    }
+    .hero-subtitle strong { color: #E0D8C0; }
+    .hero-cta {
+      display: inline-block;
+      background: var(--green);
+      color: #fff;
+      padding: .9em 2.6em;
+      border-radius: 50px;
+      font-size: 1rem;
+      letter-spacing: .04em;
+      transition: all .25s;
+      box-shadow: 0 4px 22px rgba(44,112,48,.45);
+      border: none;
+    }
+    .hero-cta:hover { background: var(--green2); transform: translateY(-3px); box-shadow: 0 8px 30px rgba(44,112,48,.5); }
+    .hero-scroll { position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,.5); font-size: 1.2rem; animation: bounce 2s infinite; }
+    @keyframes bounce { 0%,100%{ transform: translateX(-50%) translateY(0); } 50%{ transform: translateX(-50%) translateY(8px); } }
+
+    /* ─── Títulos de sección ─────────────────────────── */
+    .section-title {
+      font-size: clamp(1.7rem, 3vw, 2.3rem);
+      color: var(--green);
+      margin-bottom: .35em;
+    }
+    .section-sub { color: var(--muted); margin-bottom: 2.5rem; font-size: 1rem; max-width: 560px; }
+
+    /* ─── Proceso ────────────────────────────────────── */
+    #proceso { background: var(--surface); }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 1.5rem;
+    }
+    .step {
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.8rem 1.4rem;
+      text-align: center;
+      background: var(--bg);
+      transition: all .25s;
+    }
+    .step:hover { border-color: var(--green2); transform: translateY(-3px); box-shadow: 0 6px 20px rgba(44,112,48,.12); }
+    .step-icon { font-size: 2.2rem; margin-bottom: .6rem; }
+    .step-num { display: inline-block; background: var(--green); color: #fff; font-size: .7rem; letter-spacing: .08em; padding: .18em .65em; border-radius: 20px; margin-bottom: .5rem; font-family: sans-serif; }
+    .step h3 { font-size: .95rem; color: var(--text); margin-bottom: .4rem; }
+    .step p { font-size: .85rem; color: var(--muted); line-height: 1.5; }
+
+
+    /* ─── Galería ────────────────────────────────────── */
+    #galeria { background: var(--bg2); }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.1rem;
+    }
+    .gallery-item {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      border: 2.5px solid transparent;
+      aspect-ratio: 3/2;
+      background: #1a1e18;
+      transition: all .3s;
+    }
+    .gallery-item img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform .4s, filter .4s;
+    }
+    .gallery-item:hover img { transform: scale(1.06); filter: brightness(1.08); }
+    .gallery-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.7) 0%, transparent 55%);
+      display: flex; align-items: flex-end; padding: .9rem 1rem;
+      opacity: 0; transition: opacity .3s;
+    }
+    .gallery-item:hover .gallery-overlay { opacity: 1; }
+    .gallery-overlay-text { color: #fff; font-size: .88rem; }
+    .gallery-overlay-cta {
+      display: inline-block; margin-top: .35rem;
+      background: var(--green); color: #fff;
+      padding: .3em .9em; border-radius: 20px; font-size: .78rem;
+    }
+    .gallery-item.selected { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(168,124,24,.25); }
+    .selected-badge {
+      position: absolute; top: .6rem; right: .6rem;
+      background: var(--gold); color: #fff;
+      font-size: .72rem; font-weight: bold;
+      padding: .2em .7em; border-radius: 20px;
+      display: none; font-family: sans-serif; letter-spacing: .04em;
+    }
+    .gallery-item.selected .selected-badge { display: block; }
+
+    /* ─── Modal foto ─────────────────────────────────── */
+    .photo-modal-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,.88);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 1.5rem;
+      animation: fadeIn .2s ease;
+    }
+    @keyframes fadeIn { from{ opacity:0; } to{ opacity:1; } }
+    .photo-modal-inner {
+      position: relative;
+      max-width: min(90vw, 900px);
+      max-height: 85vh;
+    }
+    .photo-modal-inner img {
+      border-radius: 8px;
+      max-width: 100%;
+      max-height: 75vh;
+      object-fit: contain;
+      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    }
+    .photo-modal-title {
+      color: #E0DAC8;
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 1.05rem;
+      font-style: italic;
+    }
+    .photo-modal-actions {
+      display: flex; gap: 1rem; margin-top: 1.2rem; justify-content: center; flex-wrap: wrap;
+    }
+    .btn-modal-select {
+      background: var(--green);
+      color: #fff;
+      border: none;
+      padding: .75em 2.2em;
+      border-radius: 30px;
+      font-size: .95rem;
+      transition: all .2s;
+      box-shadow: 0 4px 16px rgba(44,112,48,.4);
+    }
+    .btn-modal-select:hover { background: var(--green2); transform: translateY(-2px); }
+    .btn-modal-close {
+      background: transparent;
+      color: #C0B8A0;
+      border: 1.5px solid rgba(255,255,255,.25);
+      padding: .75em 2em;
+      border-radius: 30px;
+      font-size: .95rem;
+      transition: all .2s;
+    }
+    .btn-modal-close:hover { color: #fff; border-color: rgba(255,255,255,.5); }
+    .photo-modal-overlay .close-x {
+      position: fixed; top: 1.2rem; right: 1.4rem;
+      font-size: 1.6rem;
+      color: rgba(255,255,255,.5);
+      background: none; border: none;
+      cursor: pointer; transition: color .2s; line-height: 1;
+    }
+    .photo-modal-overlay .close-x:hover { color: #fff; }
+
+    /* ─── Barra flotante ─────────────────────────────── */
+    .sel-bar {
+      position: fixed; bottom: 1.4rem; left: 50%; transform: translateX(-50%);
+      z-index: 190;
+      background: var(--surface);
+      border: 1.5px solid var(--gold);
+      border-radius: 50px;
+      padding: .55rem 1.2rem .55rem .6rem;
+      display: flex; align-items: center; gap: .9rem;
+      box-shadow: 0 6px 28px rgba(0,0,0,.22);
+      white-space: nowrap;
+      transition: all .3s ease;
+      max-width: calc(100vw - 2rem);
+    }
+    .sel-bar img { width: 42px; height: 42px; object-fit: cover; border-radius: 50%; border: 2px solid var(--gold); }
+    .sel-bar-text { font-size: .85rem; color: var(--text); }
+    .sel-bar-text strong { color: var(--green); display: block; font-size: .8rem; }
+    .sel-bar-btn {
+      background: var(--green);
+      color: #fff;
+      border: none;
+      padding: .45em 1.2em;
+      border-radius: 30px;
+      font-size: .83rem;
+      transition: all .2s;
+    }
+    .sel-bar-btn:hover { background: var(--green2); }
+
+    /* ─── Configurador ───────────────────────────────── */
+    #configurador { background: var(--surface); }
+    .config-block { margin-bottom: 3.5rem; }
+    .config-block h3 {
+      font-size: 1rem;
+      color: var(--green);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      font-family: sans-serif;
+      margin-bottom: 1.2rem;
+      padding-bottom: .5rem;
+      border-bottom: 1.5px solid var(--border);
+    }
+
+    /* Tamaño personalizado */
+    .size-inputs { display: flex; align-items: flex-end; gap: 1.5rem; flex-wrap: wrap; }
+    .size-field { display: flex; flex-direction: column; gap: .4rem; }
+    .size-field label { font-size: .82rem; color: var(--muted); font-family: sans-serif; letter-spacing: .03em; }
+    .size-field .dim-wrap { display: flex; align-items: center; gap: .5rem; }
+    .size-field input[type=number] {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: .75rem 1rem;
+      font-size: 1.2rem;
+      font-family: sans-serif;
+      font-weight: bold;
+      outline: none;
+      transition: border-color .2s;
+      width: 100px;
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+    .size-field input[type=number]::-webkit-inner-spin-button,
+    .size-field input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .size-field input[type=number]:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(44,112,48,.1); }
+    .size-field .dim-unit { font-size: .9rem; color: var(--muted); font-family: sans-serif; }
+    .size-x { font-size: 1.6rem; color: var(--border); font-family: sans-serif; padding-bottom: .25rem; }
+    .size-price-ref {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .7rem 1.1rem;
+      font-family: sans-serif;
+      font-size: .88rem;
+      color: var(--muted);
+      margin-top: 1.2rem;
+    }
+    .size-price-ref strong { color: var(--gold); font-size: 1rem; }
+
+    /* ─── Marcos con imagen real ─────────────────────── */
+    .frame-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1.2rem;
+    }
+    .frame-card {
+      background: var(--surface);
+      border: 2.5px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all .25s;
+      text-align: center;
+    }
+    .frame-card:hover { border-color: var(--green2); transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,.12); }
+    .frame-card.active { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(168,124,24,.22), 0 4px 16px rgba(0,0,0,.1); }
+    .frame-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+    .frame-card .frame-card-name { padding: .55rem .5rem .65rem; font-size: .85rem; font-weight: bold; color: var(--text); font-family: sans-serif; }
+
+    /* ─── Vista previa — trío ────────────────────────── */
+    .preview-wrap {
+      display: grid;
+      grid-template-columns: 1fr 270px;
+      gap: 2rem;
+      align-items: start;
+    }
+    @media(max-width: 720px) { .preview-wrap { grid-template-columns: 1fr; } }
+
+    .preview-stage {
+      background: #F0EBE0;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem 1.5rem;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 300px;
+    }
+    .no-photo-msg { color: var(--muted); text-align: center; font-size: .95rem; font-family: sans-serif; }
+    .no-photo-msg .icon { font-size: 3rem; margin-bottom: .6rem; }
+
+    /* Trío: foto + plus + marco */
+    .preview-trio {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .preview-trio-item {
+      display: flex; flex-direction: column; align-items: center; gap: .6rem;
+    }
+    .preview-trio-label {
+      font-size: .72rem; font-family: sans-serif; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .1em;
+    }
+    .preview-trio-item img {
+      max-width: 220px; max-height: 240px;
+      object-fit: contain; border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.18);
+      display: block; background: #fff;
+    }
+    .preview-trio-caption {
+      font-size: .82rem; color: var(--text); font-family: sans-serif;
+      text-align: center; max-width: 200px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .preview-plus {
+      font-size: 2.8rem; color: var(--border); font-family: sans-serif;
+      line-height: 1; flex-shrink: 0; margin-top: 1.8rem;
+      user-select: none;
+    }
+
+    /* ─── Resumen de la vista previa ─────────────────── */
+    .preview-info {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.8rem;
+    }
+    .preview-info h3 { font-size: .88rem; color: var(--green); margin-bottom: 1.1rem; text-transform: uppercase; letter-spacing: .08em; font-family: sans-serif; }
+    .info-row { display: flex; justify-content: space-between; padding: .6rem 0; border-bottom: 1px solid var(--border); font-size: .88rem; }
+    .info-row:last-of-type { border-bottom: none; }
+    .info-label { color: var(--muted); font-family: sans-serif; }
+    .info-val { color: var(--text); font-weight: bold; text-align: right; max-width: 55%; font-family: sans-serif; }
+    .total-row { margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .total-label { color: var(--muted); font-size: .88rem; font-family: sans-serif; }
+    .total-price { font-size: 1.6rem; color: var(--gold); font-weight: bold; }
+
+    /* ─── Reservar ───────────────────────────────────── */
+    #reservar { background: var(--bg2); }
+    .reserva-notice {
+      background: rgba(44,112,48,.08);
+      border: 1px solid rgba(44,112,48,.2);
+      border-radius: var(--radius);
+      padding: 1rem 1.4rem;
+      margin-bottom: 1.8rem;
+      font-size: .88rem;
+      color: var(--green2);
+      font-family: sans-serif;
+    }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+    @media(max-width:600px){ .form-grid { grid-template-columns: 1fr; } }
+    .form-group { display: flex; flex-direction: column; gap: .35rem; }
+    .form-group.full { grid-column: 1/-1; }
+    .form-group label { font-size: .82rem; color: var(--muted); font-family: sans-serif; letter-spacing: .03em; }
+    .form-group input, .form-group textarea {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: .72rem 1rem;
+      font-size: .92rem;
+      font-family: sans-serif;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .form-group input:focus, .form-group textarea:focus { border-color: var(--green); }
+    .form-group textarea { resize: vertical; min-height: 88px; }
+    .summary-box {
+      grid-column: 1/-1;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem 1.4rem;
+    }
+    .summary-box h4 { color: var(--green); margin-bottom: .8rem; font-size: .88rem; text-transform: uppercase; letter-spacing: .06em; font-family: sans-serif; }
+    .sum-row { display: flex; justify-content: space-between; padding: .28rem 0; font-family: sans-serif; font-size: .88rem; color: var(--muted); }
+    .sum-row span:last-child { color: var(--text); }
+    .sum-total { border-top: 1px solid var(--border); margin-top: .5rem; padding-top: .5rem; display: flex; justify-content: space-between; color: var(--gold); font-size: 1.1rem; font-family: sans-serif; font-weight: bold; }
+    .form-error { background: rgba(200,40,40,.08); border: 1px solid rgba(200,40,40,.2); color: #B83030; border-radius: 8px; padding: .75rem 1.1rem; font-size: .85rem; font-family: sans-serif; display: none; grid-column: 1/-1; }
+    .btn-reservar {
+      grid-column: 1/-1;
+      background: linear-gradient(135deg, var(--green), var(--green2));
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      padding: 1.1rem 2.4rem;
+      font-size: 1.05rem;
+      letter-spacing: .03em;
+      transition: all .25s;
+      box-shadow: 0 4px 20px rgba(44,112,48,.3);
+      font-family: sans-serif;
+    }
+    .btn-reservar:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(44,112,48,.4); }
+
+    /* ─── Footer ─────────────────────────────────────── */
+    footer {
+      background: #121A10;
+      border-top: 1px solid #2A3828;
+      padding: 2.5rem 0;
+      text-align: center;
+      color: #7A9070;
+      font-size: .86rem;
+    }
+    footer .fb { font-size: 1.1rem; color: #A0C885; margin-bottom: .4rem; }
+
+    /* ─── Modal éxito ────────────────────────────────── */
+    .success-overlay {
+      position: fixed; inset: 0; z-index: 400;
+      background: rgba(0,0,0,.7);
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+    }
+    .success-modal {
+      background: var(--surface);
+      border: 1.5px solid var(--green);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 16px 48px rgba(0,0,0,.35);
+    }
+    .success-modal h2 { color: var(--green); margin-bottom: .8rem; }
+    .success-modal p { color: var(--muted); margin-bottom: 1.5rem; font-size: .93rem; font-family: sans-serif; }
+    .btn-ok { background: var(--green); color: #fff; border: none; border-radius: 30px; padding: .7em 2em; font-size: 1rem; transition: all .2s; cursor: pointer; }
+    .btn-ok:hover { background: var(--green2); }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="nav-brand">Cuadros de Naturaleza</div>
+  <div class="nav-links">
+    <a href="#proceso">Proceso</a>
+    <a href="#galeria">Galería</a>
+    <a href="#configurador">Personalizar</a>
+    <a href="#reservar">Reservar</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-eyebrow">Fotografía de Fauna y Naturaleza</div>
+  <h1 class="hero-title">Cuadros de<br><em>Naturaleza</em></h1>
+  <p class="hero-subtitle">
+    Fotos de <strong>Gabriel Banga</strong>, fotógrafo con más de 15 años de experiencia
+    captando la fauna silvestre. Te invitamos a traer un espacio de naturaleza
+    dentro de tu hogar.
+  </p>
+  <a href="#galeria" class="hero-cta">Explorar Galería</a>
+  <div class="hero-scroll">↓</div>
+</header>
+
+<!-- PROCESO -->
+<section id="proceso">
+  <div class="container">
+    <h2 class="section-title">¿Cómo funciona?</h2>
+    <p class="section-sub">De la naturaleza a tu pared, en 5 pasos simples</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-icon">📸</div>
+        <div class="step-num">PASO 1</div>
+        <h3>Elegí tu foto</h3>
+        <p>Explorá la galería de Gabriel y elegí la imagen que más te inspire.</p>
+      </div>
+      <div class="step">
+        <div class="step-icon">📐</div>
+        <div class="step-num">PASO 2</div>
+        <h3>Elegí el tamaño</h3>
+        <p>Vertical 60×90 cm o apaisado 120×80 cm, según el espacio que tengas.</p>
+      </div>
+      <div class="step">
+        <div class="step-icon">🖼️</div>
+        <div class="step-num">PASO 3</div>
+        <h3>Elegí el marco</h3>
+        <p>Seleccioná el estilo y color que mejor combine con tu deco.</p>
+      </div>
+      <div class="step">
+        <div class="step-icon">📩</div>
+        <div class="step-num">PASO 4</div>
+        <h3>Reservá</h3>
+        <p>Enviás tu pedido y en 24 hs te confirmamos y acordamos el pago.</p>
+      </div>
+      <div class="step">
+        <div class="step-icon">🚚</div>
+        <div class="step-num">PASO 5</div>
+        <h3>¡Lo recibís en casa!</h3>
+        <p>Imprimimos en alta fidelidad, enmarcamos con vidrio y enviamos.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- GALERÍA -->
+<section id="galeria">
+  <div class="container">
+    <h2 class="section-title">Galería</h2>
+    <p class="section-sub">Hacé click en una foto para verla en detalle y seleccionarla</p>
+    <div class="gallery-grid" id="galleryGrid"></div>
+  </div>
+</section>
+
+<!-- MODAL FOTO -->
+<div class="photo-modal-overlay hidden" id="photoModal">
+  <button class="close-x" onclick="closeModal()">✕</button>
+  <div class="photo-modal-inner">
+    <img id="modalImg" src="" alt="">
+    <div class="photo-modal-title" id="modalTitle"></div>
+    <div class="photo-modal-actions">
+      <button class="btn-modal-select" onclick="selectPhotoFromModal()">✓ Seleccionar esta foto</button>
+      <button class="btn-modal-close" onclick="closeModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- BARRA FLOTANTE -->
+<div class="sel-bar hidden" id="selBar">
+  <img id="selBarThumb" src="" alt="">
+  <div class="sel-bar-text">
+    <strong id="selBarTitle">Foto seleccionada</strong>
+    Lista para personalizar
+  </div>
+  <button class="sel-bar-btn" onclick="scrollToConfig()">Personalizar →</button>
+</div>
+
+<!-- CONFIGURADOR -->
+<section id="configurador">
+  <div class="container">
+    <h2 class="section-title">Personalizá tu cuadro</h2>
+    <p class="section-sub">Elegí tamaño y marco y ve cómo quedaría antes de reservar</p>
+
+    <!-- Tamaño personalizado -->
+    <div class="config-block">
+      <h3>Tamaño</h3>
+      <div class="size-inputs">
+        <div class="size-field">
+          <label for="inp-ancho">Ancho</label>
+          <div class="dim-wrap">
+            <input type="number" id="inp-ancho" value="120" min="10" max="300" oninput="onSizeChange()">
+            <span class="dim-unit">cm</span>
+          </div>
+        </div>
+        <div class="size-x">×</div>
+        <div class="size-field">
+          <label for="inp-alto">Alto</label>
+          <div class="dim-wrap">
+            <input type="number" id="inp-alto" value="80" min="10" max="300" oninput="onSizeChange()">
+            <span class="dim-unit">cm</span>
+          </div>
+        </div>
+      </div>
+      <div class="size-price-ref">
+        Precios de referencia: <strong>$100.000</strong> hasta ~5.400 cm² · <strong>$120.000</strong> hasta ~9.600 cm² · Tamaños personalizados a consultar.
+      </div>
+    </div>
+
+    <!-- Marcos -->
+    <div class="config-block">
+      <h3>Estilo de Marco</h3>
+      <div class="frame-options" id="frameOptions"></div>
+    </div>
+
+    <!-- Vista Previa -->
+    <div class="config-block">
+      <h3>Vista Previa</h3>
+      <div class="preview-wrap">
+        <div class="preview-stage" id="previewStage">
+          <!-- Estado vacío -->
+          <div class="no-photo-msg" id="noPhotoMsg">
+            <div class="icon">🖼️</div>
+            <p>Seleccioná una foto de la galería<br>para ver la vista previa</p>
+          </div>
+          <!-- Trío: foto + plus + marco -->
+          <div class="preview-trio hidden" id="previewTrio">
+            <div class="preview-trio-item">
+              <span class="preview-trio-label">Foto elegida</span>
+              <img id="prevPhotoImg" src="" alt="Foto seleccionada">
+              <span class="preview-trio-caption" id="prevPhotoCaption">—</span>
+            </div>
+            <div class="preview-plus">+</div>
+            <div class="preview-trio-item">
+              <span class="preview-trio-label">Marco elegido</span>
+              <img id="prevFrameImg" src="" alt="Marco seleccionado">
+              <span class="preview-trio-caption" id="prevFrameCaption">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-info">
+          <h3>Resumen</h3>
+          <div class="info-row"><span class="info-label">Foto</span><span class="info-val" id="sumFoto">—</span></div>
+          <div class="info-row"><span class="info-label">Tamaño</span><span class="info-val" id="sumTamaño">120 × 80 cm</span></div>
+          <div class="info-row"><span class="info-label">Marco</span><span class="info-val" id="sumMarco">—</span></div>
+          <div class="info-row"><span class="info-label">Incluye</span><span class="info-val" style="font-size:.78rem;">Impresión · Marco · Vidrio · Envío</span></div>
+          <div class="total-row">
+            <span class="total-label">Total</span>
+            <span class="total-price" id="sumPrecio">A consultar</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESERVAR -->
+<section id="reservar">
+  <div class="container" style="max-width:760px;">
+    <h2 class="section-title">Reservar</h2>
+    <p class="section-sub">Completá tus datos y te contactamos en menos de 24 hs para confirmar</p>
+
+    <div class="reserva-notice">
+      🔒 La reserva no implica pago inmediato. Te confirmaremos el pedido y acordaremos la forma de pago por email o WhatsApp.
+    </div>
+
+    <form id="reservaForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="inp-nombre">Nombre completo *</label>
+          <input type="text" id="inp-nombre" placeholder="Ej: María García" required>
+        </div>
+        <div class="form-group">
+          <label for="inp-telefono">Teléfono / WhatsApp *</label>
+          <input type="tel" id="inp-telefono" placeholder="Ej: +54 9 11 1234-5678" required>
+        </div>
+        <div class="form-group">
+          <label for="inp-email">Email *</label>
+          <input type="email" id="inp-email" placeholder="tu@email.com" required>
+        </div>
+        <div class="form-group">
+          <label for="inp-provincia">Provincia</label>
+          <input type="text" id="inp-provincia" placeholder="Ej: Buenos Aires">
+        </div>
+        <div class="form-group full">
+          <label for="inp-direccion">Dirección de envío *</label>
+          <textarea id="inp-direccion" placeholder="Calle, número, piso/depto, localidad, provincia, CP" required></textarea>
+        </div>
+        <div class="form-group full">
+          <label for="inp-mensaje">Comentarios adicionales (opcional)</label>
+          <textarea id="inp-mensaje" placeholder="¿Alguna consulta o detalle especial?"></textarea>
+        </div>
+
+        <div class="summary-box">
+          <h4>📦 Tu pedido</h4>
+          <div class="sum-row"><span>Foto</span><span id="sumFoto2">—</span></div>
+          <div class="sum-row"><span>Tamaño</span><span id="sumTamaño2">120 × 80 cm</span></div>
+          <div class="sum-row"><span>Marco</span><span id="sumMarco2">—</span></div>
+          <div class="sum-row"><span>Incluye</span><span>Impresión · Marco · Vidrio · Envío</span></div>
+          <div class="sum-total"><span>Total</span><span id="sumPrecio2">A consultar</span></div>
+        </div>
+
+        <div class="form-error" id="formError"></div>
+        <button type="submit" class="btn-reservar">📩 Enviar Reserva</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="fb">Cuadros de Naturaleza</div>
+    <p>Fotografía de fauna silvestre por <em>Gabriel Banga</em> · Más de 15 años de experiencia</p>
+    <p style="margin-top:.5rem; font-size:.8rem;">© 2025 Gabriel Banga · Todos los derechos reservados</p>
+  </div>
+</footer>
+
+<!-- MODAL ÉXITO -->
+<div class="success-overlay hidden" id="successModal">
+  <div class="success-modal">
+    <div style="font-size:2.8rem;margin-bottom:.5rem;">✅</div>
+    <h2>¡Reserva enviada!</h2>
+    <p>Se abrió tu cliente de correo con el detalle del pedido listo para enviar a Gabriel.<br>Te responderá en menos de 24 hs para confirmar.</p>
+    <button class="btn-ok" onclick="document.getElementById('successModal').classList.add('hidden')">Perfecto</button>
+  </div>
+</div>
+
+<script>
+// ─── Datos ─────────────────────────────────────────
+const photos = [
+  { file:"fotos/01_ibis_en_humedales.jpg",        title:"Ibis en los Humedales" },
+  { file:"fotos/02_lechuza_en_rama.jpg",           title:"Lechuza en la Rama" },
+  { file:"fotos/03_cormoran_con_pez.jpg",          title:"Cormorán con su Presa" },
+  { file:"fotos/04_velero_al_atardecer.jpg",       title:"Velero al Atardecer" },
+  { file:"fotos/05_luna_flores_rojas_I.jpg",       title:"Luna entre Flores Rojas I" },
+  { file:"fotos/06_luna_flores_rojas_II.jpg",      title:"Luna entre Flores Rojas II" },
+  { file:"fotos/07_liebre_en_el_pasto.jpg",        title:"Liebre en el Pasto" },
+  { file:"fotos/08_lechuza_de_campo.jpg",          title:"Lechuza de Campo" },
+  { file:"fotos/09_abeja_flores_blancas_I.jpg",    title:"Abeja y Flores Blancas I" },
+  { file:"fotos/10_vaquita_en_cardo.jpg",          title:"Vaquita de San Antonio" },
+  { file:"fotos/11_abeja_flores_blancas_II.jpg",   title:"Abeja y Flores Blancas II" },
+  { file:"fotos/12_abeja_flores_blancas_III.jpg",  title:"Abeja y Flores Blancas III" },
+  { file:"fotos/13_garza_aterrizando.jpg",         title:"Garza Blanca Aterrizando" },
+  { file:"fotos/14_garza_en_vuelo_lateral.jpg",    title:"Garza Blanca en Vuelo I" },
+  { file:"fotos/15_garza_en_vuelo_frontal.jpg",    title:"Garza Blanca en Vuelo II" },
+  { file:"fotos/16_trogon_en_rama.jpg",            title:"Trogón en la Rama" },
+  { file:"fotos/17_golondrina_sobre_lago.jpg",     title:"Golondrina sobre el Lago" },
+  { file:"fotos/18_estela_en_cielo.jpg",           title:"Estela en el Cielo" },
+];
+
+const frames = [
+  { file:"marcos/marco1.jpg",  name:"Dorado Barroco" },
+  { file:"marcos/marco2.jpeg", name:"Caoba con Passepartout" },
+  { file:"marcos/marco3.jpeg", name:"Madera Natural" },
+  { file:"marcos/marco4.jpg",  name:"Negro Moderno" },
+];
+
+// ─── Estado ─────────────────────────────────────────
+let state = {
+  selectedPhoto: null,
+  pendingModal: null,
+  selectedFrame: 0,
+  widthCm: 120,
+  heightCm: 80,
+};
+
+// ─── Galería ─────────────────────────────────────────
+function buildGallery() {
+  const grid = document.getElementById('galleryGrid');
+  photos.forEach((p, i) => {
+    const item = document.createElement('div');
+    item.className = 'gallery-item';
+    item.dataset.index = i;
+    item.innerHTML = `
+      <img src="${p.file}" alt="${p.title}" loading="lazy">
+      <div class="gallery-overlay">
+        <div class="gallery-overlay-text">
+          <div>${p.title}</div>
+          <span class="gallery-overlay-cta">Ver foto</span>
+        </div>
+      </div>
+      <div class="selected-badge">✓ ELEGIDA</div>
+    `;
+    item.addEventListener('click', () => openModal(i));
+    grid.appendChild(item);
+  });
+}
+
+// ─── Modal de foto ────────────────────────────────────
+function openModal(index) {
+  state.pendingModal = index;
+  const modal = document.getElementById('photoModal');
+  document.getElementById('modalImg').src = photos[index].file;
+  document.getElementById('modalTitle').textContent = photos[index].title;
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('photoModal').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function selectPhotoFromModal() {
+  if (state.pendingModal === null) return;
+  closeModal();
+  applyPhotoSelection(state.pendingModal);
+  // Auto-scroll al configurador
+  setTimeout(() => scrollToConfig(), 200);
+}
+
+// Cerrar modal con Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+// Cerrar modal al hacer click fuera de la imagen
+document.getElementById('photoModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ─── Selección de foto ─────────────────────────────────
+function applyPhotoSelection(index) {
+  document.querySelectorAll('.gallery-item').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.gallery-item')[index].classList.add('selected');
+  state.selectedPhoto = index;
+
+  // Barra flotante
+  document.getElementById('selBarThumb').src = photos[index].file;
+  document.getElementById('selBarTitle').textContent = photos[index].title;
+  document.getElementById('selBar').classList.remove('hidden');
+
+  updatePreview();
+  updateSummary();
+}
+
+function scrollToConfig() {
+  document.getElementById('configurador').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ─── Marcos con imagen real ────────────────────────────
+function buildFrameOptions() {
+  const container = document.getElementById('frameOptions');
+  frames.forEach((f, i) => {
+    const card = document.createElement('button');
+    card.className = 'frame-card' + (i === 0 ? ' active' : '');
+    card.innerHTML = `
+      <img src="${f.file}" alt="${f.name}" loading="lazy">
+      <div class="frame-card-name">${f.name}</div>
+    `;
+    card.addEventListener('click', () => selectFrame(i, card));
+    container.appendChild(card);
+  });
+}
+
+function selectFrame(index, card) {
+  document.querySelectorAll('.frame-card').forEach(el => el.classList.remove('active'));
+  card.classList.add('active');
+  state.selectedFrame = index;
+  updatePreview();
+  updateSummary();
+}
+
+// ─── Tamaño libre ──────────────────────────────────────
+function onSizeChange() {
+  const w = parseInt(document.getElementById('inp-ancho').value) || 0;
+  const h = parseInt(document.getElementById('inp-alto').value) || 0;
+  state.widthCm  = w;
+  state.heightCm = h;
+  updateSummary();
+}
+
+function calcPrice(w, h) {
+  const area = w * h;
+  if (area <= 0)    return 'A consultar';
+  if (area <= 5400) return '$100.000';
+  if (area <= 9600) return '$120.000';
+  return 'A consultar';
+}
+
+// ─── Vista Previa — trío foto + plus + marco ───────────
+function updatePreview() {
+  const noMsg = document.getElementById('noPhotoMsg');
+  const trio  = document.getElementById('previewTrio');
+
+  if (state.selectedPhoto === null) {
+    noMsg.classList.remove('hidden');
+    trio.classList.add('hidden');
+    return;
+  }
+
+  noMsg.classList.add('hidden');
+  trio.classList.remove('hidden');
+
+  // Foto
+  document.getElementById('prevPhotoImg').src = photos[state.selectedPhoto].file;
+  document.getElementById('prevPhotoCaption').textContent = photos[state.selectedPhoto].title;
+
+  // Marco
+  document.getElementById('prevFrameImg').src = frames[state.selectedFrame].file;
+  document.getElementById('prevFrameCaption').textContent = frames[state.selectedFrame].name;
+}
+
+// ─── Resumen ───────────────────────────────────────────
+function updateSummary() {
+  const fotoName   = state.selectedPhoto !== null ? photos[state.selectedPhoto].title : '—';
+  const marcoName  = frames[state.selectedFrame].name;
+  const w = state.widthCm, h = state.heightCm;
+  const sizeLabel  = (w && h) ? `${w} × ${h} cm` : '—';
+  const priceLabel = calcPrice(w, h);
+
+  ['sumFoto','sumFoto2'].forEach(id => document.getElementById(id).textContent = fotoName);
+  ['sumTamaño','sumTamaño2'].forEach(id => document.getElementById(id).textContent = sizeLabel);
+  ['sumMarco','sumMarco2'].forEach(id => document.getElementById(id).textContent = marcoName);
+  ['sumPrecio','sumPrecio2'].forEach(id => document.getElementById(id).textContent = priceLabel);
+}
+
+// ─── Formulario de reserva ─────────────────────────────
+document.getElementById('reservaForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  const nombre    = document.getElementById('inp-nombre').value.trim();
+  const telefono  = document.getElementById('inp-telefono').value.trim();
+  const email     = document.getElementById('inp-email').value.trim();
+  const provincia = document.getElementById('inp-provincia').value.trim();
+  const direccion = document.getElementById('inp-direccion').value.trim();
+  const mensaje   = document.getElementById('inp-mensaje').value.trim();
+  const errorBox  = document.getElementById('formError');
+
+  errorBox.style.display = 'none';
+
+  if (state.selectedPhoto === null) {
+    errorBox.textContent = '⚠️ Por favor seleccioná una foto de la galería antes de reservar.';
+    errorBox.style.display = 'block';
+    document.getElementById('galeria').scrollIntoView({ behavior:'smooth' });
+    return;
+  }
+  if (!nombre || !telefono || !email || !direccion) {
+    errorBox.textContent = '⚠️ Por favor completá todos los campos obligatorios (*).';
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  const fotoName   = photos[state.selectedPhoto].title;
+  const marcoName  = frames[state.selectedFrame].name;
+  const w = state.widthCm, h = state.heightCm;
+  const sizeLabel  = (w && h) ? `${w} × ${h} cm` : 'A confirmar';
+  const priceLabel = calcPrice(w, h);
+
+  const subject = `Reserva de Cuadro – ${fotoName}`;
+  const body = `NUEVA RESERVA DE CUADRO
+================================
+
+DETALLE DEL PEDIDO
+------------------
+Fotografía: ${fotoName}
+Tamaño:     ${sizeLabel}
+Marco:      ${marcoName}
+Incluye:    Impresión alta fidelidad + Marco + Vidrio + Envío
+Precio:     ${priceLabel}
+
+DATOS DEL CLIENTE
+------------------
+Nombre:     ${nombre}
+Teléfono:   ${telefono}
+Email:      ${email}
+Provincia:  ${provincia || '—'}
+Dirección:  ${direccion}
+${mensaje ? '\nComentarios:\n' + mensaje : ''}
+
+================================
+Reserva realizada desde la web de Cuadros de Naturaleza – Gabriel Banga`.trim();
+
+  window.location.href = `mailto:exequiel.banga@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  setTimeout(() => document.getElementById('successModal').classList.remove('hidden'), 700);
+});
+
+// ─── Nav al hacer scroll ───────────────────────────────
+window.addEventListener('scroll', () => {
+  document.getElementById('mainNav').classList.toggle('visible', window.scrollY > 80);
+});
+
+// ─── Init ──────────────────────────────────────────────
+buildGallery();
+buildFrameOptions();
+updatePreview();
+updateSummary();
+</script>
+</body>
+</html>
